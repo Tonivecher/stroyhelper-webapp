@@ -1,0 +1,140 @@
+import { useState } from "react";
+import jsPDF from "jspdf";
+
+export default function StroyHelperApp() {
+  const [step, setStep] = useState(1);
+  const [room, setRoom] = useState("");
+  const [length, setLength] = useState("");
+  const [width, setWidth] = useState("");
+  const [height, setHeight] = useState("");
+  const [material, setMaterial] = useState("");
+  const [savedRooms, setSavedRooms] = useState([]);
+
+  const area = parseFloat(length) * parseFloat(width);
+  const wallArea = 2 * (parseFloat(length) + parseFloat(width)) * parseFloat(height);
+
+  const saveRoom = () => {
+    const newRoom = {
+      name: room,
+      size: `${length}×${width}×${height}`,
+      area: area.toFixed(2),
+      wallArea: wallArea.toFixed(2),
+      material,
+    };
+    setSavedRooms([...savedRooms, newRoom]);
+  };
+
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(14);
+    doc.text("StroyHelper - Расчёт", 20, 20);
+    savedRooms.forEach((room, i) => {
+      const offset = 30 + i * 40;
+      doc.text(`Комната: ${room.name}`, 20, offset);
+      doc.text(`Размер: ${room.size}`, 20, offset + 10);
+      doc.text(`Пол: ${room.area} м²`, 20, offset + 20);
+      doc.text(`Стены: ${room.wallArea} м²`, 20, offset + 30);
+      doc.text(`Материал: ${room.material}`, 20, offset + 40);
+    });
+    doc.save("stroyhelper-расчёты.pdf");
+  };
+
+  const goNext = () => setStep(step + 1);
+  const goBack = () => setStep(step - 1);
+
+  return (
+    <div className="min-h-screen bg-gray-100 p-4 flex flex-col items-center">
+      <h1 className="text-2xl font-bold mb-4">StroyHelper</h1>
+
+      {step === 1 && (
+        <div className="w-full max-w-md bg-white p-4 rounded-2xl shadow">
+          <h2 className="text-lg mb-2">1. Введите параметры комнаты</h2>
+          <input
+            type="text"
+            placeholder="Название комнаты"
+            className="input"
+            value={room}
+            onChange={(e) => setRoom(e.target.value)}
+          />
+          <input
+            type="number"
+            placeholder="Длина (м)"
+            className="input"
+            value={length}
+            onChange={(e) => setLength(e.target.value)}
+          />
+          <input
+            type="number"
+            placeholder="Ширина (м)"
+            className="input"
+            value={width}
+            onChange={(e) => setWidth(e.target.value)}
+          />
+          <input
+            type="number"
+            placeholder="Высота (м)"
+            className="input"
+            value={height}
+            onChange={(e) => setHeight(e.target.value)}
+          />
+          <button className="btn mt-2" onClick={goNext}>Далее</button>
+        </div>
+      )}
+
+      {step === 2 && (
+        <div className="w-full max-w-md bg-white p-4 rounded-2xl shadow">
+          <h2 className="text-lg mb-2">2. Выберите материал</h2>
+          <select
+            className="input"
+            value={material}
+            onChange={(e) => setMaterial(e.target.value)}
+          >
+            <option value="">-- выберите --</option>
+            <option value="Плитка">Плитка</option>
+            <option value="Обои">Обои</option>
+            <option value="Краска">Краска</option>
+            <option value="Гипсокартон">Гипсокартон</option>
+          </select>
+          <div className="flex gap-2 mt-4">
+            <button className="btn" onClick={goBack}>Назад</button>
+            <button className="btn" onClick={() => {
+              saveRoom();
+              goNext();
+            }}>Рассчитать</button>
+          </div>
+        </div>
+      )}
+
+      {step === 3 && (
+        <div className="w-full max-w-md bg-white p-4 rounded-2xl shadow">
+          <h2 className="text-lg mb-2">3. Результаты</h2>
+          <p>Комната: <strong>{room}</strong></p>
+          <p>Размер: {length}м × {width}м × {height}м</p>
+          <p>Материал: <strong>{material}</strong></p>
+          <p>Площадь пола: <strong>{area.toFixed(2)} м²</strong></p>
+          <p>Площадь стен: <strong>{wallArea.toFixed(2)} м²</strong></p>
+          <div className="flex flex-col gap-2 mt-4">
+            <button className="btn" onClick={() => setStep(1)}>Новый расчёт</button>
+            <button className="btn" onClick={exportPDF}>Скачать PDF</button>
+          </div>
+        </div>
+      )}
+
+      {savedRooms.length > 0 && (
+        <div className="w-full max-w-md mt-6 bg-white p-4 rounded-2xl shadow">
+          <h2 className="text-lg mb-2">Сохранённые расчёты</h2>
+          {savedRooms.map((r, idx) => (
+            <div key={idx} className="border-b py-2 text-sm">
+              <p>🏠 {r.name} — {r.material}</p>
+              <p>Пол: {r.area} м² | Стены: {r.wallArea} м²</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Tailwind helper styles (вставить в CSS):
+// .input { @apply w-full border border-gray-300 rounded-xl px-3 py-2 mb-2; }
+// .btn { @apply bg-blue-500 text-white px-4 py-2 rounded-xl hover:bg-blue-600; }
